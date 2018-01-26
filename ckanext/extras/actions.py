@@ -30,13 +30,13 @@ def external_resource_list(context, data_dict):
     s = context['session']
     m = context['model']
     q = h.get_external_resources(s, m)
-    q.limit(data_dict.get('limit') or DEFAULT_LIMIT)
-    q.offset(data_dict.get('offset') or DEFAULT_OFFSET)
+    limit = int(data_dict.get('limit') or DEFAULT_LIMIT)
+    offset = int(data_dict.get('offset') or DEFAULT_OFFSET)
 
     out = [{'dataset': item[1].title,
              'dataset_url': item[1].url,
              'name': item[0].name,
-             'url': item[0].url} for item in q]
+             'url': item[0].url} for item in q[offset:offset+limit]]
     return out
 
     
