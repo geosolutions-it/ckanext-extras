@@ -29,7 +29,6 @@ def external_resource_list(context, data_dict):
 
     s = context['session']
     m = context['model']
-    check_access('external_resource_list', context, data_dict)
     q = h.get_external_resources(s, m)
     q.limit(data_dict.get('limit') or DEFAULT_LIMIT)
     q.offset(data_dict.get('offset') or DEFAULT_OFFSET)
