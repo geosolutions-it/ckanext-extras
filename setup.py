@@ -28,6 +28,10 @@ setup(
 
         [babel.extractors]
         ckan = ckan.lib.extract:extract_ckan
+
+
+        [nose.plugins]
+        main = ckan.ckan_nose_plugin:CkanNose
     ''',
 
     # Translations

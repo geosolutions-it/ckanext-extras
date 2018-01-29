@@ -11,8 +11,9 @@ def get_external_resources(session, model, ):
     site_url = config.get('ckan.site_url')
     r = model.Resource
     p = model.Package
+
     # 2.5 uses sqlalchemy 0.9+
-    if toolkit.check_ckan_version(min_version='2.5.0'):
+    if hasattr(r.url, 'startsWith'):
         q = session.query(r, p)\
              .join(p) \
              .filter(p.state == 'active') \

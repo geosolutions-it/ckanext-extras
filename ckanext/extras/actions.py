@@ -38,5 +38,3 @@ def external_resource_list(context, data_dict):
              'name': item[0].name,
              'url': item[0].url} for item in q[offset:offset+limit]]
     return out
-
-    
