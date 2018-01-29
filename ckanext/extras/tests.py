@@ -9,10 +9,6 @@ from ckan.tests.helpers import call_action
 
 class ExternalResourceTestCase(unittest.TestCase):
     
-    #@classmethod
-    #def setUpClass(self):
-    #    model.repo.rebuild_db()
-
     def setUp(self):
         self.p = {'title': 'Test package',
              'name': 'test-package',
