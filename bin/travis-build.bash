@@ -69,7 +69,7 @@ cd -
 
 echo "Installing ckanext-extras and its requirements..."
 python setup.py develop
-pip install -r requirements.txt
+#pip install -r requirements.txt
 
 echo "Moving test.ini into a subdir..."
 mkdir subdir
