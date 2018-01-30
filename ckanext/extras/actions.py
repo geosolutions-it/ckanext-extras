@@ -52,6 +52,7 @@ def external_resource_list(context, data_dict):
                                                    id=pkg.id,
                                                    qualified=True)},
                      'url': res.url,
+                     'name': res.name,
                      'id': res.id}
 
         data.append(item_dict)
