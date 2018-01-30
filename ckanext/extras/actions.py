@@ -24,7 +24,12 @@ def external_resource_list(context, data_dict):
         provided, 0 will be used
     :type offset: int
 
-    :rtype: list of dictionaries with keys: name, url, dataset, dataset_url
+    :rtype:
+        list of dictionaries with keys:
+                name, url (url to external resource),
+                dataset, id
+        dataset contains keys:
+                id, title, url (url to dataset on ckan instance)
 
     """.format(DEFAULT_LIMIT)
 
