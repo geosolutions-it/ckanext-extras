@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from ckan.logic import check_access, side_effect_free
+from ckan.plugins import toolkit as t
 from ckanext.extras import helpers as h
 
 
@@ -30,11 +31,33 @@ def external_resource_list(context, data_dict):
     s = context['session']
     m = context['model']
     q = h.get_external_resources(s, m)
+
     limit = int(data_dict.get('limit') or DEFAULT_LIMIT)
     offset = int(data_dict.get('offset') or DEFAULT_OFFSET)
+    
+    count = q.count()
+    q = q.limit(limit).offset(offset)
+    
+    data = []
+    get_res = t.get_action('resource_show')
+    get_pkg = t.get_action('package_show')
 
-    out = [{'dataset': item[1].title,
-             'dataset_url': item[1].url,
-             'name': item[0].name,
-             'url': item[0].url} for item in q[offset:offset+limit]]
+    for item in q:
+
+        res, pkg = item
+
+        item_dict = {'dataset': { 'id': pkg.id,
+                                  'title': pkg.title,
+                                  'url': t.url_for('dataset_read',
+                                                   id=pkg.id,
+                                                   qualified=True)},
+                     'url': res.url,
+                     'id': res.id}
+
+        data.append(item_dict)
+    out = {'count': count,
+           'limit': limit,
+           'offset': offset,
+           'data': data}
+
     return out
