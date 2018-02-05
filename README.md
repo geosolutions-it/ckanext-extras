@@ -1,4 +1,6 @@
 
+[![Build Status](https://travis-ci.org/geosolutions-it/ckanext-extras.svg?branch=master)](https://travis-ci.org/geosolutions-it/ckanext-extras)
+
 # ckanext-extras
 
 The ckanext-extras CKAN's extension provides `external_resource_list` action, which returns list of public resources, which are not local (are served by external service).
