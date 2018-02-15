@@ -5,18 +5,25 @@ import unittest
 from ckan import model
 from ckan.lib.base import config
 from ckan.model.meta import Session as session
-from ckan.tests.helpers import call_action
-from ckan.lib.helpers import url_is_local
-
+from ckan.tests.helpers import call_action, reset_db
+from ckanext.extras.helpers import get_local_sites, is_local_site
 
 SITE_URL = config['ckan.site_url']
+OTHER_LOCAL_URL = 'http://some.other.server'
+config['ckanext.extras.local_sites'] = OTHER_LOCAL_URL
 
+
+# update with new config
+get_local_sites()
+
+
+# quick wrapper around url detection
 def url_is_external(val):
-    return not url_is_local(val)
+    return not is_local_site(val)
 
 
 class ExternalResourceTestCase(unittest.TestCase):
-    
+
     def setUp(self):
         self.p = {'title': 'Test package',
                   'name': 'test-package',
@@ -26,18 +33,20 @@ class ExternalResourceTestCase(unittest.TestCase):
                                  'url': '{}/local/222'.format(SITE_URL)},
                                 {'id': 'res03',
                                  'url': 'http://external.server/test.res'},
-                               ],
+                                {'id': 'res04',
+                                 'url': '{}/local/04'.format(OTHER_LOCAL_URL)}
+                                ],
                   'url': 'http://test.server/'
-             }
+                  }
         self.ctx = {'ignore_auth': True,
                     'model': model,
                     'session': session,
                     'user': 'user'}
 
-        out = call_action('package_create', context=self.ctx, **self.p)
+        call_action('package_create', context=self.ctx, **self.p)
 
     def tearDown(self):
-        model.repo.rebuild_db()
+        reset_db()
 
     def test_action(self):
         out = call_action('external_resource_list', context=self.ctx)
@@ -50,7 +59,8 @@ class ExternalResourceTestCase(unittest.TestCase):
                                   'url': 'file{:2d}.bin'.format(idx)})
             else:
                 resources.append({'id': 'res{}'.format(idx),
-                                  'url': 'http://external/server/{:02d}'.format(idx)})
+                                  'url': ('http://external/'
+                                          'server/{:02d}').format(idx)})
 
         p = self.p.copy()
         p.update({'title': 'test package 2',
@@ -58,7 +68,10 @@ class ExternalResourceTestCase(unittest.TestCase):
         p['resources'] = resources
 
         call_action('package_create', context=self.ctx, **p)
-        out = call_action('external_resource_list', context=self.ctx, limit=10, offset=2)
+        out = call_action('external_resource_list',
+                          context=self.ctx,
+                          limit=10,
+                          offset=2)
 
         self.assertEqual(out.get('count'), 50)
         self.assertEqual(out.get('limit'), 10)
@@ -74,17 +87,19 @@ class ExternalResourceTestCase(unittest.TestCase):
 
         """
         out = call_action('external_resource_list', context=self.ctx)
-        self.assertTrue(len(out['data'])> 0)
+        self.assertTrue(len(out['data']) > 0)
         for urlx in out['data']:
             url = urlx['url']
             self.assertTrue(url_is_external(url))
 
-        pkg = call_action('package_show', context=self.ctx, name_or_id=self.p['name'])
+        pkg = call_action('package_show',
+                          context=self.ctx,
+                          name_or_id=self.p['name'])
         self.assertTrue(pkg)
-        self.assertTrue(len(pkg['resources']) == 3)
+        self.assertTrue(len(pkg['resources']) == len(self.p['resources']))
         for res in pkg['resources']:
             # known external
             if res['id'] == 'res03':
                 self.assertTrue(url_is_external(res['url']))
             else:
-                self.assertTrue(url_is_local(res['url']))
+                self.assertTrue(not url_is_external(res['url']), res)
