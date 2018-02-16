@@ -33,6 +33,17 @@ The ckanext-extras extension has been developed for CKAN 2.4.3 or later.
 
      `sudo service apache2 reload`
 
+## Configuration
+
+This extension uses `ckan.site_url` to resolve if url is local for current ckan instance, or is pointing to resource outside of it. However, it may came to situation, that one base url is insufficient. For that case, you can add `ckanext.extras.local_sites` to config. This can be a string or list of strings with base urls, which should be considered as local.
+
+```
+ckanext.extras.local_sites =
+    http://localhost
+    http://127.0.0.1
+```
+
+
 ## Development Installation
 
 To install `ckanext-extras` for development, activate your CKAN virtualenv and do:
