@@ -5,13 +5,14 @@ import unittest
 from ckan import model
 from ckan.lib.base import config
 from ckan.model.meta import Session as session
-from ckan.tests.helpers import call_action, reset_db
+from ckan.tests.helpers import call_action, reset_db, change_config
 from ckanext.extras.helpers import init_sites, is_local_site
 
 SITE_URL = config['ckan.site_url']
 OTHER_LOCAL_URL = 'http://some.other.server'
 OTHER_EXTERNAL_URL = 'http://some.other.server/proxied'
-config['ckanext.extras.local_sites'] = OTHER_LOCAL_URL
+config['ckanext.extras.local_sites'] =\
+    'http://localhost {}'.format(OTHER_LOCAL_URL)
 
 config['ckanext.extras.external_sites'] =\
     'http://completely.different.host {}'.format(OTHER_EXTERNAL_URL)
@@ -62,7 +63,7 @@ class ExternalResourceTestCase(unittest.TestCase):
         for idx in xrange(0, 100):
             if idx % 2 == 0:
                 resources.append({'id': 'res{}'.format(idx),
-                                  'url': 'file{:2d}.bin'.format(idx)})
+                                  'url': 'http://localhost/file{:2d}.bin'.format(idx)})
             else:
                 resources.append({'id': 'res{}'.format(idx),
                                   'url': ('http://external/'
@@ -114,3 +115,33 @@ class ExternalResourceTestCase(unittest.TestCase):
             else:
                 self.assertTrue(not url_is_external(res['url']), res)
         self.assertEqual(external_count, 2)
+
+    @change_config('ckanext.extras.external_sites', '')
+    def test_external_urls_no_exceptions(self):
+        """
+        Check if all resources retruyned from api are external.
+        Also, check if resource urls are recognized as external.
+
+        """
+        init_sites()
+
+        out = call_action('external_resource_list', context=self.ctx)
+        self.assertTrue(len(out['data']) > 0)
+        for urlx in out['data']:
+            url = urlx['url']
+            self.assertTrue(url_is_external(url))
+
+        pkg = call_action('package_show',
+                          context=self.ctx,
+                          name_or_id=self.p['name'])
+        self.assertTrue(pkg)
+        self.assertTrue(len(pkg['resources']) == len(self.p['resources']))
+        external_count = 0
+        for res in pkg['resources']:
+            # known external
+            if res['id'] in ('res03',):
+                self.assertTrue(url_is_external(res['url']))
+                external_count += 1
+            else:
+                self.assertTrue(not url_is_external(res['url']), res)
+        self.assertEqual(external_count, 1)

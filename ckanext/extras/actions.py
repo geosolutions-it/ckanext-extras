@@ -49,16 +49,16 @@ def external_resource_list(context, data_dict):
 
     for item in q:
 
-        res, pkg = item
+        r_id, r_url, r_name, p_id, p_title = item
 
-        item_dict = {'dataset': { 'id': pkg.id,
-                                  'title': pkg.title,
+        item_dict = {'dataset': { 'id': p_id,
+                                  'title': p_title,
                                   'url': t.url_for('dataset_read',
-                                                   id=pkg.id,
+                                                   id=p_id,
                                                    qualified=True)},
-                     'url': res.url,
-                     'name': res.name,
-                     'id': res.id}
+                     'url': r_url,
+                     'name': r_name,
+                     'id': r_id}
 
         data.append(item_dict)
     out = {'count': count,

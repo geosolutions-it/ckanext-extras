@@ -38,6 +38,8 @@ def init_sites():
     get_external_sites()
 
 
+init_sites()
+
 def is_local_site(url):
     # check explicitly external sites first
     if url.startswith(EXTERNAL_SITES):
@@ -51,31 +53,38 @@ def get_external_resources(session, model):
     r = model.Resource
     p = model.Package
 
+    base_q = session.query(r.id, r.url, r.name, p.id, p.title)\
+                    .join(p) \
+                    .filter(p.state == 'active') \
+                    .filter(p.private.is_(False)) \
+                    .filter(r.state == 'active') \
+
     # 2.5 uses sqlalchemy 0.9+
     if hasattr(r.url, 'startswith'):
+       
+        _filter = [r.url.startswith(item) for item in EXTERNAL_SITES]
         _exclude = [r.url.startswith(item) for item in LOCAL_SITES]
-        exclude_local_sites = or_(*_exclude)
-        q = session.query(r, p)\
-                   .join(p) \
-                   .filter(p.state == 'active') \
-                   .filter(p.private.is_(False)) \
-                   .filter(r.state == 'active') \
-                   .filter(and_(or_(r.url.startswith('http://'),
-                                r.url.startswith('https://')),
-                           not_(exclude_local_sites)))\
-                   .order_by(r.url)
+        q = base_q
+        local_q = base_q
+
+        if _filter:
+            local_q = local_q.filter(not_(or_(*_filter)))
+        if _exclude:
+            local_q = local_q.filter(or_(*_exclude))
+        q = base_q.except_(local_q)
+
 
     else:
-
+        # todo: subq
+        _filter = [r.url.ilike('{}%'.format(item)) for item in EXTERNAL_SITES]
         _exclude = [r.url.ilike('{}%'.format(item)) for item in LOCAL_SITES]
-        exclude_local_sites = or_(*_exclude)
-        q = session.query(r, p)\
-                   .join(p) \
-                   .filter(p.state == 'active') \
-                   .filter(p.private.is_(False)) \
-                   .filter(r.state == 'active') \
-                   .filter(and_(or_(r.url.ilike('http://%'),
-                                    r.url.ilike('https://%')),
-                                not_(exclude_local_sites)))\
-                   .order_by(r.url)
-    return q
+        q = base_q
+        local_q = base_q
+
+        if _filter:
+            local_q = local_q.filter(not_(or_(*_filter)))
+        if _exclude:
+            local_q = local_q.filter(or_(*_exclude))
+        q = base_q.except_(local_q)
+
+    return q.order_by(r.url)
