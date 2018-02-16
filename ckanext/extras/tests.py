@@ -6,15 +6,19 @@ from ckan import model
 from ckan.lib.base import config
 from ckan.model.meta import Session as session
 from ckan.tests.helpers import call_action, reset_db
-from ckanext.extras.helpers import get_local_sites, is_local_site
+from ckanext.extras.helpers import init_sites, is_local_site
 
 SITE_URL = config['ckan.site_url']
 OTHER_LOCAL_URL = 'http://some.other.server'
+OTHER_EXTERNAL_URL = 'http://some.other.server/proxied'
 config['ckanext.extras.local_sites'] = OTHER_LOCAL_URL
+
+config['ckanext.extras.external_sites'] =\
+    'http://completely.different.host {}'.format(OTHER_EXTERNAL_URL)
 
 
 # update with new config
-get_local_sites()
+init_sites()
 
 
 # quick wrapper around url detection
@@ -34,7 +38,9 @@ class ExternalResourceTestCase(unittest.TestCase):
                                 {'id': 'res03',
                                  'url': 'http://external.server/test.res'},
                                 {'id': 'res04',
-                                 'url': '{}/local/04'.format(OTHER_LOCAL_URL)}
+                                 'url': '{}/local/04'.format(OTHER_LOCAL_URL)},
+                                {'id': 'res05',
+                                 'url': '{}/remote/05'.format(OTHER_EXTERNAL_URL)},
                                 ],
                   'url': 'http://test.server/'
                   }
@@ -97,9 +103,14 @@ class ExternalResourceTestCase(unittest.TestCase):
                           name_or_id=self.p['name'])
         self.assertTrue(pkg)
         self.assertTrue(len(pkg['resources']) == len(self.p['resources']))
+        external_count = 0
         for res in pkg['resources']:
             # known external
-            if res['id'] == 'res03':
+            if res['id'] in ('res03', 'res05'):
                 self.assertTrue(url_is_external(res['url']))
+                if res['id'] == 'res05':
+                    self.assertTrue(res['url'].startswith(OTHER_LOCAL_URL))
+                external_count += 1
             else:
                 self.assertTrue(not url_is_external(res['url']), res)
+        self.assertEqual(external_count, 2)

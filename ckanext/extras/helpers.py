@@ -6,6 +6,7 @@ from sqlalchemy.sql.expression import not_, or_, and_
 
 SITE_URL = config['ckan.site_url']
 LOCAL_SITES = []
+EXTERNAL_SITES = []
 
 
 def get_local_sites():
@@ -20,10 +21,28 @@ def get_local_sites():
     LOCAL_SITES = tuple(out)
 
 
-get_local_sites()
+def get_external_sites():
+    global EXTERNAL_SITES
+    out = []
+    _external_sites = config.get('ckanext.extras.external_sites')
+    if _external_sites:
+        out.extend([u.strip()
+                    for u in _external_sites.replace('\n', ' ')
+                                         .split(' ')
+                    if u.strip()])
+    EXTERNAL_SITES = tuple(out)
+
+
+def init_sites():
+    get_local_sites()
+    get_external_sites()
 
 
 def is_local_site(url):
+    # check explicitly external sites first
+    if url.startswith(EXTERNAL_SITES):
+        return False
+    # check if it's not local site
     return url.startswith(LOCAL_SITES)
 
 
