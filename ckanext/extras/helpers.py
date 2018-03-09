@@ -11,11 +11,13 @@ EXTERNAL_SITES = []
 
 def get_local_sites():
     global LOCAL_SITES
-    out = [SITE_URL]
+    # local site and non-http paths (which are local anyway)
+    out = [SITE_URL, '/']
     _local_sites = config.get('ckanext.extras.local_sites')
     if _local_sites:
         out.extend([u.strip()
                     for u in _local_sites.replace('\n', ' ')
+                                         .strip()
                                          .split(' ')
                     if u.strip()])
     LOCAL_SITES = tuple(out)

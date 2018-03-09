@@ -30,6 +30,7 @@ def url_is_external(val):
 class ExternalResourceTestCase(unittest.TestCase):
 
     def setUp(self):
+        reset_db()
         self.p = {'title': 'Test package',
                   'name': 'test-package',
                   'resources': [{'id': 'res01',
