@@ -78,4 +78,18 @@ To install `ckanext-extras` for development, activate your CKAN virtualenv and d
 	cd ckanext-extras
 
 	python setup.py develop
+	
+## API URL
+
+The API is reachable at the following endpoint:
+http://public.address/api/action/external_resource_list
+
+Parameters to be used to navigate the resource list are:
+
+limit: the max number of resource returned
+offset: the resource index from which results are returned
+
+Below a sample URL:
+
+http://public.address/api/action/external_resource_list?limit=50&offset=0
 
