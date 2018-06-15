@@ -53,6 +53,7 @@ class ExternalResourceTestCase(unittest.TestCase):
                     'model': model,
                     'session': session,
                     'for_edit': True,
+                    'use_cache': False,
                     'user': 'user'}
 
         p = call_action('package_create', context=self.ctx, **self.p)
