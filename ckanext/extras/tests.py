@@ -56,7 +56,10 @@ class ExternalResourceTestCase(unittest.TestCase):
                     'user': 'user'}
 
         p = call_action('package_create', context=self.ctx, **self.p)
-        r = session.query(Resource).filter_by(package_id=p['id'], name='local06')
+
+        r = session.query(Resource).filter_by(package_id=p['id'], id='local06').one()
+        print('got resource', r)
+        print(r.url)
         r.url = 'local/06'
         session.flush()
 
