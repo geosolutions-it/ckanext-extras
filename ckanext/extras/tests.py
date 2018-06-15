@@ -57,10 +57,6 @@ class ExternalResourceTestCase(unittest.TestCase):
 
         p = call_action('package_create', context=self.ctx, **self.p)
 
-        r = session.query(Resource).filter_by(package_id=p['id'], id='local06').one()
-        r.url = 'local/06'
-        session.flush()
-
     def tearDown(self):
         reset_db()
 
@@ -125,7 +121,9 @@ class ExternalResourceTestCase(unittest.TestCase):
                 external_count += 1
             else:
                 if res['id'] == 'local06':
-                    print('---> ', res)
+                    print(self.ctx)
+                    print(self.p['resources'][-1])
+                    print(res)
                 self.assertTrue(not url_is_external(res['url']), res)
         self.assertEqual(external_count, 2)
 
