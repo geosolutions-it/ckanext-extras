@@ -6,11 +6,12 @@ from ckan import model
 from ckan.lib.base import config
 from ckan.model.meta import Session as session
 from ckan.tests.helpers import call_action, reset_db, change_config
-from ckanext.extras.helpers import init_sites, is_local_site
+from ckanext.extras.helpers import init_sites, is_local_site, LOCAL_SITES, EXTERNAL_SITES
 
 SITE_URL = config['ckan.site_url']
 OTHER_LOCAL_URL = 'http://some.other.server'
 OTHER_EXTERNAL_URL = 'http://some.other.server/proxied'
+
 config['ckanext.extras.local_sites'] =\
     'http://localhost {}'.format(OTHER_LOCAL_URL)
 
@@ -19,8 +20,7 @@ config['ckanext.extras.external_sites'] =\
 
 
 # update with new config
-init_sites()
-
+init_sites(internal=[], external=[])
 
 # quick wrapper around url detection
 def url_is_external(val):
@@ -33,32 +33,37 @@ class ExternalResourceTestCase(unittest.TestCase):
         reset_db()
         self.p = {'title': 'Test package',
                   'name': 'test-package',
-                  'resources': [{'id': 'res01',
+                  'resources': [{'id': 'local01',
                                  'url': '{}/111.zip'.format(SITE_URL)},
-                                {'id': 'res02',
+                                {'id': 'local02',
                                  'url': '{}/local/222'.format(SITE_URL)},
-                                {'id': 'res03',
+                                {'id': 'external03',
                                  'url': 'http://external.server/test.res'},
-                                {'id': 'res04',
+                                {'id': 'local04',
                                  'url': '{}/local/04'.format(OTHER_LOCAL_URL)},
-                                {'id': 'res05',
+                                {'id': 'external05',
                                  'url': '{}/remote/05'.format(OTHER_EXTERNAL_URL)},
+                                {'id': 'local06',
+                                 'url': 'local/06'}
                                 ],
                   'url': 'http://test.server/'
                   }
         self.ctx = {'ignore_auth': True,
                     'model': model,
                     'session': session,
+                    'for_edit': True,
                     'user': 'user'}
 
-        call_action('package_create', context=self.ctx, **self.p)
+        p = call_action('package_create', context=self.ctx, **self.p)
 
     def tearDown(self):
         reset_db()
 
     def test_action(self):
         out = call_action('external_resource_list', context=self.ctx)
-        self.assertEqual(out['data'][0]['url'], self.p['resources'][2]['url'])
+        self.assertEqual(out['count'], 2, out)
+        for item in out['data']:
+            self.assertTrue(item['id'].startswith('external'), item)
 
         resources = []
         for idx in xrange(0, 100):
@@ -108,9 +113,9 @@ class ExternalResourceTestCase(unittest.TestCase):
         external_count = 0
         for res in pkg['resources']:
             # known external
-            if res['id'] in ('res03', 'res05'):
-                self.assertTrue(url_is_external(res['url']))
-                if res['id'] == 'res05':
+            if res['id'].startswith('external'):
+                self.assertTrue(url_is_external(res['url']), (res['id'], res['url']))
+                if res['id'] == 'external05':
                     self.assertTrue(res['url'].startswith(OTHER_LOCAL_URL))
                 external_count += 1
             else:
@@ -124,7 +129,7 @@ class ExternalResourceTestCase(unittest.TestCase):
         Also, check if resource urls are recognized as external.
 
         """
-        init_sites()
+        init_sites(external=[])
 
         out = call_action('external_resource_list', context=self.ctx)
         self.assertTrue(len(out['data']) > 0)
@@ -139,10 +144,11 @@ class ExternalResourceTestCase(unittest.TestCase):
         self.assertTrue(len(pkg['resources']) == len(self.p['resources']))
         external_count = 0
         for res in pkg['resources']:
-            # known external
-            if res['id'] in ('res03',):
-                self.assertTrue(url_is_external(res['url']))
+            # known external - 03, because prefix is exteral
+            if res['id'] == 'external03':
+                self.assertTrue(url_is_external(res['url']), (res['id'], res['url']))
                 external_count += 1
             else:
-                self.assertTrue(not url_is_external(res['url']), res)
+                # external05 is local, because it's not excluded in external_sites now
+                self.assertTrue(not url_is_external(res['url']), (res['id'], res['url']))
         self.assertEqual(external_count, 1)
