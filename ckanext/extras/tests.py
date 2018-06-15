@@ -5,6 +5,7 @@ import unittest
 from ckan import model
 from ckan.lib.base import config
 from ckan.model.meta import Session as session
+from ckan.model import Resource
 from ckan.tests.helpers import call_action, reset_db, change_config
 from ckanext.extras.helpers import init_sites, is_local_site, LOCAL_SITES, EXTERNAL_SITES
 
@@ -55,6 +56,9 @@ class ExternalResourceTestCase(unittest.TestCase):
                     'user': 'user'}
 
         p = call_action('package_create', context=self.ctx, **self.p)
+        r = session.query(Resource).filter_by(package_id=p['id'], name='local06')
+        r.url = 'local/06'
+        session.flush()
 
     def tearDown(self):
         reset_db()
