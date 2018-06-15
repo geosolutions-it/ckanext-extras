@@ -121,10 +121,6 @@ class ExternalResourceTestCase(unittest.TestCase):
                     self.assertTrue(res['url'].startswith(OTHER_LOCAL_URL))
                 external_count += 1
             else:
-                if res['id'] == 'local06':
-                    print(self.ctx)
-                    print(self.p['resources'][-1])
-                    print(res)
                 self.assertTrue(not url_is_external(res['url']), res)
         self.assertEqual(external_count, 2)
 
